@@ -3,9 +3,9 @@ import json
 import os
 import datetime
 import csv
-#import numpy as np
-#import pandas as pd
-#import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 from collections import Counter
 
 # config
@@ -24,15 +24,14 @@ json_data = open('data/messages.json')
 threads = json.load(json_data)['threads']
 sender_pop = {}
 messages = []
+ts_hourly = []
 unknown_ids = []
 
 for t in range(len(threads)):
-    #print threads[t]['participants']
     if IGNORE_GROUP_CONVERSATIONS and len(threads[t]['participants']) > 2:
         continue
 
     for m in range(len(threads[t]['messages'])):
-        #print threads[t]['messages'][m]['sender'].encode('utf-8') + " ! " + threads[t]['messages'][m]['date'] + " ! " + threads[t]['messages'][m]['message'].encode('utf-8')
         sender = threads[t]['messages'][m]['sender'].encode('utf-8')
         if '@' in sender:
             try:
@@ -48,6 +47,7 @@ for t in range(len(threads)):
 
 sorted_pop = sorted(sender_pop.iteritems(), key=lambda x:-x[1])[:len(sender_pop)]
 
+# friend ranking based on number of messages sent
 total_messages = 0
 current_user = ''
 owner_ratio = 0
@@ -63,9 +63,14 @@ print '--------------------------'
 print 'TOTAL MESSAGES: ' + str(total_messages)
 print 'TOTAL USERS: ' + str(len(sorted_pop))
 
+
+# personal message statistics
 print 'Considering ' + current_user + ' as your account name. Hope it\'s correct!'
 
 print 'Judging by the stats above, your messages make up for ' + str(int(owner_messages * 100 / total_messages)) + '% of total count.'
+
+for i in range(24):
+    ts_hourly.append(0)
 
 for t in range(len(threads)):
     for m in range(len(threads[t]['messages'])):
@@ -77,6 +82,8 @@ for t in range(len(threads)):
                 pass
         if sender == current_user:
             messages.append(threads[t]['messages'][m]['message'].encode('utf-8'))
+            hour = datetime.datetime.strptime(threads[t]['messages'][m]['date'].split('+')[0], '%Y-%m-%dT%H:%M').hour
+            ts_hourly[hour] += 1
 
 combo = ' '.join(messages)
 word_average = int(len(combo) / owner_messages)
@@ -87,3 +94,12 @@ if DEBUG:
     print '> PLEASE SUPPLY NAMES FOR THE FOLLOWING IDS:'
     for id in unknown_ids:
         print '> ' + id
+
+# message distribution over time of day
+print ts_hourly
+plt.bar(range(24), ts_hourly, align='center', color='k', alpha=0.75)
+plt.bar(range(24), ts_hourly, align='center', color='b', alpha=0.1)
+plt.xticks([0,6,12,18], ['12 AM','6 AM', '12 PM', '6 PM'], fontsize=9)
+plt.xlabel('Hour', fontsize=12)
+plt.ylabel('Messages', fontsize=12)
+plt.show()
