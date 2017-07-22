@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from collections import Counter
+plt.rc('font', family='Arial')
 
 # config
 MIN_MESSAGES = 100
@@ -122,13 +123,16 @@ plt.savefig('output/ts_weekday.png')
 plt.close()
 
 # user popularity
-explode = (0.1)
 fig, ax = plt.subplots()
 sorted_pop_messages = [item[1] for item in sorted_pop[1:user_threshold]]
 sorted_pop_messages.append(rest_messages)
-print sorted_pop_messages
 
-ax.pie(sorted_pop_messages, shadow=True, startangle=90)
+sorted_pop_users = [item[0] for item in sorted_pop[1:user_threshold]]
+sorted_pop_users.append('Other users')
+for i in range(len(sorted_pop_users)):
+    sorted_pop_users[i] = unicode(sorted_pop_users[i], "utf-8")
+
+ax.pie(sorted_pop_messages, labels=sorted_pop_users, shadow=True, startangle=90)
 ax.axis('equal')
 plt.savefig('output/ts_users.png')
 plt.close()
