@@ -50,12 +50,17 @@ sorted_pop = sorted(sender_pop.iteritems(), key=lambda x:-x[1])[:len(sender_pop)
 
 # friend ranking based on number of messages sent
 total_messages = 0
+rest_messages = 0
 current_user = ''
 owner_ratio = 0
+user_threshold = 0
 for sender in sorted_pop:
     total_messages += sender[1]
     if sender[1] > MIN_MESSAGES:
         print sender[0] + " " + str(sender[1])
+        user_threshold += 1
+    else:
+        rest_messages += sender[1]
     if current_user == '':
         current_user = sender[0]
         owner_messages = sender[1]
@@ -114,4 +119,16 @@ plt.xticks([0,1,2,3,4,5,6], ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], fontsiz
 plt.xlabel('Weekday', fontsize=12)
 plt.ylabel('Messages', fontsize=12)
 plt.savefig('output/ts_weekday.png')
+plt.close()
+
+# user popularity
+explode = (0.1)
+fig, ax = plt.subplots()
+sorted_pop_messages = [item[1] for item in sorted_pop[1:user_threshold]]
+sorted_pop_messages.append(rest_messages)
+print sorted_pop_messages
+
+ax.pie(sorted_pop_messages, shadow=True, startangle=90)
+ax.axis('equal')
+plt.savefig('output/ts_users.png')
 plt.close()
