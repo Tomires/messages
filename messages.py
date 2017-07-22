@@ -25,6 +25,7 @@ threads = json.load(json_data)['threads']
 sender_pop = {}
 messages = []
 ts_hourly = []
+ts_weekday = []
 unknown_ids = []
 
 for t in range(len(threads)):
@@ -72,6 +73,9 @@ print 'Judging by the stats above, your messages make up for ' + str(int(owner_m
 for i in range(24):
     ts_hourly.append(0)
 
+for i in range(7):
+    ts_weekday.append(0)
+
 for t in range(len(threads)):
     for m in range(len(threads[t]['messages'])):
         sender = threads[t]['messages'][m]['sender'].encode('utf-8')
@@ -82,8 +86,9 @@ for t in range(len(threads)):
                 pass
         if sender == current_user:
             messages.append(threads[t]['messages'][m]['message'].encode('utf-8'))
-            hour = datetime.datetime.strptime(threads[t]['messages'][m]['date'].split('+')[0], '%Y-%m-%dT%H:%M').hour
-            ts_hourly[hour] += 1
+            timestamp = datetime.datetime.strptime(threads[t]['messages'][m]['date'].split('+')[0], '%Y-%m-%dT%H:%M')
+            ts_hourly[timestamp.hour] += 1
+            ts_weekday[timestamp.weekday()] += 1
 
 combo = ' '.join(messages)
 word_average = int(len(combo) / owner_messages)
@@ -96,10 +101,17 @@ if DEBUG:
         print '> ' + id
 
 # message distribution over time of day
-print ts_hourly
 plt.bar(range(24), ts_hourly, align='center', color='k', alpha=0.75)
-plt.bar(range(24), ts_hourly, align='center', color='b', alpha=0.1)
 plt.xticks([0,6,12,18], ['12 AM','6 AM', '12 PM', '6 PM'], fontsize=9)
 plt.xlabel('Hour', fontsize=12)
 plt.ylabel('Messages', fontsize=12)
-plt.show()
+plt.savefig('output/ts_hourly.png')
+plt.close()
+
+# message distribution over days of week
+plt.bar(range(7), ts_weekday, align='center', color='k', alpha=0.75)
+plt.xticks([0,1,2,3,4,5,6], ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], fontsize=9)
+plt.xlabel('Weekday', fontsize=12)
+plt.ylabel('Messages', fontsize=12)
+plt.savefig('output/ts_weekday.png')
+plt.close()
