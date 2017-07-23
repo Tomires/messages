@@ -125,15 +125,17 @@ if DEBUG:
         print '> ' + id
 
 # message distribution over time of day
-plt.bar(range(24), ts_hourly, align='center', color='k', alpha=0.75)
+plt.title('Message distribution')
+plt.bar(range(24), ts_hourly, align='center', color='k', alpha=1)
 plt.xticks([0,6,12,18], ['12 AM','6 AM', '12 PM', '6 PM'], fontsize=9)
-plt.xlabel('Hour', fontsize=12)
+plt.xlabel('Time of day', fontsize=12)
 plt.ylabel('Messages', fontsize=12)
 plt.savefig('output/ts_hourly.png')
 plt.close()
 
 # message distribution over days of week
-plt.bar(range(7), ts_weekday, align='center', color='k', alpha=0.75)
+plt.title('Message distribution')
+plt.bar(range(7), ts_weekday, align='center', color='k', alpha=1)
 plt.xticks([0,1,2,3,4,5,6], ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], fontsize=9)
 plt.xlabel('Weekday', fontsize=12)
 plt.ylabel('Messages', fontsize=12)
@@ -150,6 +152,7 @@ sorted_pop_users.append('Other users')
 for i in range(len(sorted_pop_users)):
     sorted_pop_users[i] = unicode(sorted_pop_users[i], "utf-8")
 
+plt.title('User popularity')
 ax.pie(sorted_pop_messages, labels=sorted_pop_users, shadow=True, startangle=90)
 ax.axis('equal')
 plt.savefig('output/ts_users.png')
@@ -163,9 +166,10 @@ for hour in range(24):
     else:
         average_delay.append(delay_total[hour] / delay_msgs[hour])
 
-plt.bar(range(24), average_delay, align='center', color='k', alpha=0.75)
+plt.title('Average delay')
+plt.bar(range(24), average_delay, align='center', color='k', alpha=1)
 plt.xticks([0,6,12,18], ['12 AM','6 AM', '12 PM', '6 PM'], fontsize=9)
-plt.xlabel('Hour', fontsize=12)
+plt.xlabel('Time of day', fontsize=12)
 plt.ylabel('Minutes', fontsize=12)
 plt.savefig('output/avg_delay.png')
 plt.close()
