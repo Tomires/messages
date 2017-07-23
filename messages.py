@@ -10,9 +10,10 @@ from collections import Counter
 from time import mktime
 
 # config
-MIN_MESSAGES = 100
-IGNORE_GROUP_CONVERSATIONS = True
-DEBUG = False
+MIN_MESSAGES = 100 # the minimum amount of messages for a person to appear in our userlist
+DELAY_FLOOR = 5 # the maximum amount of time in minutes to not count as a delay
+IGNORE_GROUP_CONVERSATIONS = True # should group conversations be taken into account?
+DEBUG = False # displays useful debugging information
 
 names = {}
 with open('data/names.csv', 'rb') as names_csv:
@@ -105,7 +106,7 @@ for t in range(len(threads)):
             if awaiting_reply:
                 hour = datetime.datetime.fromtimestamp(last_timestamp).hour
                 current_delay = (mktime(timestamp.timetuple()) - last_timestamp) / 60 # in minutes
-                if current_delay < 1440: # it doesn't make sense for us to count past a day
+                if DELAY_FLOOR < current_delay < 1440: # it doesn't make sense for us to count past a day
                     delay_total[hour] += current_delay
                     delay_msgs[hour] += 1
                 awaiting_reply = False
