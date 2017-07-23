@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from collections import Counter
-plt.rc('font', family='Arial')
+from time import mktime
 
 # config
 MIN_MESSAGES = 100
@@ -28,6 +28,8 @@ messages = []
 ts_hourly = []
 ts_weekday = []
 unknown_ids = []
+delay_total = []
+delay_msgs = []
 
 for t in range(len(threads)):
     if IGNORE_GROUP_CONVERSATIONS and len(threads[t]['participants']) > 2:
@@ -78,9 +80,14 @@ print 'Judging by the stats above, your messages make up for ' + str(int(owner_m
 
 for i in range(24):
     ts_hourly.append(0)
+    delay_total.append(0)
+    delay_msgs.append(0)
 
 for i in range(7):
     ts_weekday.append(0)
+
+awaiting_reply = False
+last_timestamp = 0
 
 for t in range(len(threads)):
     for m in range(len(threads[t]['messages'])):
@@ -95,6 +102,17 @@ for t in range(len(threads)):
             timestamp = datetime.datetime.strptime(threads[t]['messages'][m]['date'].split('+')[0], '%Y-%m-%dT%H:%M')
             ts_hourly[timestamp.hour] += 1
             ts_weekday[timestamp.weekday()] += 1
+            if awaiting_reply:
+                hour = datetime.datetime.fromtimestamp(last_timestamp).hour
+                current_delay = (mktime(timestamp.timetuple()) - last_timestamp) / 60 # in minutes
+                if current_delay < 1440: # it doesn't make sense for us to count past a day
+                    delay_total[hour] += current_delay
+                    delay_msgs[hour] += 1
+                awaiting_reply = False
+        else:
+            awaiting_reply = True
+            last_timestamp = mktime(datetime.datetime.strptime(threads[t]['messages'][m]['date'].split('+')[0], '%Y-%m-%dT%H:%M').timetuple())
+    awaiting_reply = False # move onto next thread
 
 combo = ' '.join(messages)
 word_average = int(len(combo) / owner_messages)
@@ -135,4 +153,19 @@ for i in range(len(sorted_pop_users)):
 ax.pie(sorted_pop_messages, labels=sorted_pop_users, shadow=True, startangle=90)
 ax.axis('equal')
 plt.savefig('output/ts_users.png')
+plt.close()
+
+# average delay in replying to messages
+average_delay = []
+for hour in range(24):
+    if delay_msgs[hour] == 0:
+        average_delay.append(0)
+    else:
+        average_delay.append(delay_total[hour] / delay_msgs[hour])
+
+plt.bar(range(24), average_delay, align='center', color='k', alpha=0.75)
+plt.xticks([0,6,12,18], ['12 AM','6 AM', '12 PM', '6 PM'], fontsize=9)
+plt.xlabel('Hour', fontsize=12)
+plt.ylabel('Minutes', fontsize=12)
+plt.savefig('output/avg_delay.png')
 plt.close()
