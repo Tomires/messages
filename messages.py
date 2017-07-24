@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from __future__ import division
 import json
 import os
@@ -25,6 +28,8 @@ json_data = open('data/messages.json')
 
 threads = json.load(json_data)['threads']
 sender_pop = {}
+sender_pos = {}
+sender_neg = {}
 messages = []
 ts_hourly = []
 ts_weekday = []
@@ -32,12 +37,28 @@ unknown_ids = []
 delay_total = []
 delay_msgs = []
 
+emoji_pos = ['😀', '😁', '😂', '😃', '😄', '😅',
+            '😆', '😉', '😊', '😋', '😎', '😍',
+            '😘', '😗', '😙', '😚', '🙂', '☺',
+            '😌', '😛', '😜', '😝', '😏',
+            ':)', ':-)', ';)', ';-)', ':P',
+            ':-P', '^^', '^.^', '^_^', ':o',
+            'xD', 'XD', ':D', ':-D']
+
+emoji_neg = ['☹', '🙁', '😞', '😢', '😭', '😦',
+            '😧', '😰', '😡', '😠',
+            ':(', ':-(', ':/', ':-/', 'D:', ':$',
+            '-_-', '-.-',
+            'X.x', 'X.X', 'x.x', 'x_x', 'X_x', 'X_X',
+            '>.>', '>.<', '<.<', '>_>', '>_<', '<_<']
+
 for t in range(len(threads)):
     if IGNORE_GROUP_CONVERSATIONS and len(threads[t]['participants']) > 2:
         continue
 
     for m in range(len(threads[t]['messages'])):
         sender = threads[t]['messages'][m]['sender'].encode('utf-8')
+        message = threads[t]['messages'][m]['message'].encode('utf-8')
         if '@' in sender:
             try:
                 sender = names[sender.replace('@facebook.com','')]
@@ -49,6 +70,23 @@ for t in range(len(threads)):
             sender_pop[sender] += 1
         else:
             sender_pop[sender] = 1
+            sender_pos[sender] = 0
+            sender_neg[sender] = 0
+
+        for e in emoji_pos:
+            if e in message:
+                sender_pos[sender] += 1
+                break
+
+        for e in emoji_neg:
+            if e in message:
+                sender_neg[sender] += 1
+                break
+
+# normalize positivity / negativity
+for sender in sender_pop:
+    sender_pos[sender] = sender_pos[sender] / sender_pop[sender]
+    sender_neg[sender] = sender_neg[sender] / sender_pop[sender]
 
 sorted_pop = sorted(sender_pop.iteritems(), key=lambda x:-x[1])[:len(sender_pop)]
 
@@ -65,9 +103,13 @@ for sender in sorted_pop:
         user_threshold += 1
     else:
         rest_messages += sender[1]
+        del(sender_pos[sender[0]])
+        del(sender_neg[sender[0]])
     if current_user == '':
         current_user = sender[0]
         owner_messages = sender[1]
+        del(sender_pos[sender[0]])
+        del(sender_neg[sender[0]])
 
 print '--------------------------'
 print 'TOTAL MESSAGES: ' + str(total_messages)
@@ -156,7 +198,7 @@ for i in range(len(sorted_pop_users)):
 plt.title('User popularity')
 ax.pie(sorted_pop_messages, labels=sorted_pop_users, shadow=True, startangle=90)
 ax.axis('equal')
-plt.savefig('output/ts_users.png')
+plt.savefig('output/user_pop.png')
 plt.close()
 
 # average delay in replying to messages
@@ -173,4 +215,34 @@ plt.xticks([0,6,12,18], ['12 AM','6 AM', '12 PM', '6 PM'], fontsize=9)
 plt.xlabel('Time of day', fontsize=12)
 plt.ylabel('Minutes', fontsize=12)
 plt.savefig('output/avg_delay.png')
+plt.close()
+
+# positivity per user
+sorted_pos = sorted(sender_pos.iteritems(), key=lambda x:-x[1])[:len(sender_pos)]
+sorted_pos_value = [item[1] for item in sorted_pos]
+sorted_pos_users = [item[0] for item in sorted_pos]
+for i in range(len(sorted_pos_users)):
+    sorted_pos_users[i] = unicode(sorted_pos_users[i], "utf-8")
+
+plt.bar(range(len(sorted_pos)), sorted_pos_value, align='center', color='k', alpha=1)
+plt.xticks(range(len(sorted_pos)), sorted_pos_users, fontsize=9, rotation=90)
+plt.xlabel('User', fontsize=12)
+plt.ylabel('Positivity', fontsize=12)
+plt.tight_layout()
+plt.savefig('output/user_pos.png')
+plt.close()
+
+# negativity per user
+sorted_neg = sorted(sender_neg.iteritems(), key=lambda x:-x[1])[:len(sender_neg)]
+sorted_neg_value = [item[1] for item in sorted_neg]
+sorted_neg_users = [item[0] for item in sorted_neg]
+for i in range(len(sorted_neg_users)):
+    sorted_neg_users[i] = unicode(sorted_neg_users[i], "utf-8")
+
+plt.bar(range(len(sorted_neg)), sorted_neg_value, align='center', color='k', alpha=1)
+plt.xticks(range(len(sorted_neg)), sorted_neg_users, fontsize=9, rotation=90)
+plt.xlabel('User', fontsize=12)
+plt.ylabel('Negativity', fontsize=12)
+plt.tight_layout()
+plt.savefig('output/user_neg.png')
 plt.close()
